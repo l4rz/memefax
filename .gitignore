@@ -1,0 +1,54 @@
+# Environment variables
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Telegram session files
+*.session
+*.session-journal
+
+# Downloaded data
+data/*
+!data/.gitkeep
+
+# IDE specific files
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store 
+chats/*
+*.mmd
+*.png
+
+# Ignore models directory for local ML models
+models/
+
+# Ignore *.md by now
+*.md
+
+# Ignore half finished shit
+static/
+templates/
+
+

@@ -1,0 +1,7 @@
+flask==3.0.2
+telethon==1.34.0
+python-dotenv==1.0.1
+SQLAlchemy==2.0.28
+tqdm>=4.65.0  # for progress bars
+aiofiles>=23.1.0  # for async file operations
+cryptg>=0.4.0  # for faster downloads 

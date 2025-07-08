@@ -340,6 +340,8 @@ async def download_messages(client, chat, chat_dir):
             print("No existing messages found. Downloading all messages...")
             total_messages = await client.get_messages(chat, limit=0)
         
+        
+        
         total_count = total_messages.total
 
         if total_count == 0:
@@ -776,6 +778,45 @@ async def list_chats(download_all_users=False, download_all_groups=False):
     finally:
         await client.disconnect()
 
+async def download_chat_by_id(chat_id: int):
+    """Download a single chat specified by its numeric ID without listing other chats"""
+    if not all([API_ID, API_HASH]):
+        print("Error: Please configure API_ID and API_HASH in .env file")
+        return
+
+    print(f"Connecting to Telegram to download chat {chat_id} ...")
+    client = TelegramClient('test_session', API_ID, API_HASH)
+
+    try:
+        await client.start()
+
+        # Interactive login on first run
+        if not await client.is_user_authorized():
+            print("\nFirst time login - you'll need to verify your phone number")
+            print("Check your Telegram app for the verification code")
+            await client.send_code_request(input("Enter your phone number (including country code): "))
+            await client.sign_in(code=input("Enter the code you received: "))
+
+        # Resolve entity by ID
+        try:
+            entity = await client.get_entity(chat_id)
+        except Exception as e:
+            print(f"Error: Could not find chat with ID {chat_id}: {e}")
+            return
+
+        chat_dir = ensure_download_dir(chat_id)[0]
+
+        print(f"\nDownloading messages from chat ID {chat_id} ...")
+        if await download_messages(client, entity, chat_dir):
+            print("Download completed successfully!")
+        else:
+            print("Download failed or no new messages found.")
+
+    except Exception as e:
+        print(f"\nError occurred: {str(e)}")
+    finally:
+        await client.disconnect()
+
 def main():
     # Parse command line arguments
     parser = argparse.ArgumentParser(
@@ -802,15 +843,43 @@ Examples:
                        help='automatically download messages from all private chats')
     parser.add_argument('--all-groups', action='store_true',
                        help='automatically download messages from all group chats (including supergroups)')
+    parser.add_argument('--id', metavar='CHAT_IDS',
+                       help='download messages from one or more chat IDs (comma-separated)')
     
     args = parser.parse_args()
 
-    if args.all_users and args.all_groups:
-        print("Error: Please use either --all-users or --all-groups, not both")
+    # Ensure mutually exclusive options
+    if sum(bool(x) for x in [args.all_users, args.all_groups, args.id is not None]) > 1:
+        print("Error: Please use only one of --id, --all-users or --all-groups at a time")
         return
 
-    # Run the async event loop
-    asyncio.run(list_chats(download_all_users=args.all_users, download_all_groups=args.all_groups))
+    def parse_chat_ids(ids_str):
+        ids = []
+        for part in ids_str.split(','):
+            part = part.strip()
+            if not part:
+                continue
+            try:
+                ids.append(int(part))
+            except ValueError:
+                print(f"Invalid chat ID: {part}")
+                return None
+        return ids
+
+    # Run the appropriate coroutine based on arguments
+    if args.id is not None:
+        chat_ids = parse_chat_ids(args.id)
+        if not chat_ids:
+            print("No valid chat IDs provided.")
+            return
+
+        async def download_multiple(chat_ids):
+            for cid in chat_ids:
+                await download_chat_by_id(cid)
+
+        asyncio.run(download_multiple(chat_ids))
+    else:
+        asyncio.run(list_chats(download_all_users=args.all_users, download_all_groups=args.all_groups))
 
 if __name__ == "__main__":
     main() 
