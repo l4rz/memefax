@@ -50,5 +50,7 @@ models/
 # Ignore half finished shit
 static/
 templates/
+src/api_test.py
+src/memefax_ui_test.py
 
 
